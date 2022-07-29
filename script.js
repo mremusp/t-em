@@ -7,8 +7,9 @@ const discoverContainer = document.querySelector(
   '#discover-container'
 );
 const searchField = document.querySelector('#search-field');
-const searchButton = document.querySelector('#search-button');
+const btnSearch = document.querySelector('#search-button');
 const btnFavorites = document.querySelector('#btn-favorites');
+const btnDiscover = document.querySelector('#btn-discover');
 
 // const genres = fetch(`${baseURL}genre/movie/list?${auth}`).then(
 //   (response) => response.json()
@@ -16,12 +17,15 @@ const btnFavorites = document.querySelector('#btn-favorites');
 
 const favorites = [];
 
-fetch(`${baseURL}discover/movie?${auth}`)
-  .then((response) => response.json())
-  .then((data) => {
-    // console.log(data);
-    populateMovies(data.results);
-  });
+const initMovies = () => {
+  fetch(`${baseURL}discover/movie?${auth}`)
+    .then((response) => response.json())
+    .then((data) => {
+      // console.log(data);
+      populateMovies(data.results);
+    });
+};
+initMovies();
 
 function populateMovies(movies) {
   discoverContainer.innerHTML = '';
@@ -37,6 +41,7 @@ function populateMovies(movies) {
     </div>
     </div>`;
   });
+  setAlreadyFavorited(movies);
   document
     .querySelectorAll('.favorite-checkmark')
     .forEach((favoriteCheckmark) => {
@@ -61,20 +66,48 @@ function setFavorite() {
     fetch(`${baseURL}movie/${this.getAttribute('data-id')}?${auth}`)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
+        // console.log(data);
         favorites.push(data);
+        console.group('current favorites');
+        favorites.forEach((favorite, index) =>
+          console.log(`${index}: ${favorite.original_title}`)
+        );
+        console.groupEnd();
       });
   } else {
-    favorites.splice(
+    console.log('unselected item:', this.getAttribute('data-id'));
+    console.log(
+      'index found:',
       favorites.findIndex(
-        (movie) => movie.id === this.getAttribute('data-id')
+        (movie) => movie.id == this.getAttribute('data-id')
       )
     );
+    favorites.splice(
+      favorites.findIndex(
+        (movie) => movie.id == this.getAttribute('data-id')
+      ),
+      1
+    );
+    console.group('current favorites');
+    favorites.forEach((favorite, index) =>
+      console.log(`${index}: ${favorite.original_title}`)
+    );
+    console.groupEnd();
   }
-  console.log('array favorites', favorites);
 }
 
-searchButton.addEventListener('click', searchMovie);
+function setAlreadyFavorited(movieList) {
+  favorites.forEach((favorite) => {
+    if (movieList.find((movie) => movie.id === favorite.id)) {
+      document.querySelector(
+        `.favorite-checkmark[data-id="${favorite.id}"]`
+      ).checked = true;
+    }
+  });
+}
+
+btnSearch.addEventListener('click', searchMovie);
+btnDiscover.addEventListener('click', initMovies);
 
 btnFavorites.addEventListener('click', () =>
   populateMovies(favorites)
