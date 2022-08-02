@@ -1,5 +1,7 @@
 'use strict';
-const auth = `api_key=${config.key}`;
+const apiKey = typeof config != 'undefined' ? config.key : '<<key here>>';
+// add TMDB API key in this section ^^
+const auth = `api_key=${apiKey}`;
 const baseURL = 'https://api.themoviedb.org/3/';
 
 console.clear();
@@ -21,17 +23,33 @@ const initMovies = () => {
 		.then((data) => {
 			populateMovies(data.results);
 		})
-		.catch((err) =>
-			console.log(`Error when initializing discover tab: ${err}`)
-		);
+		.catch((err) => {
+			handleEmptyScreen();
+			console.log(`Error when initializing discover tab: ${err}`);
+		});
 };
 initMovies();
 
-function populateMovies(movies) {
+const handleEmptyScreen = (screen = 'default') => {
+	console.log('fn works');
+	const emptyScreenMsg = document.createElement('p');
+	emptyScreenMsg.classList.add('empty-screen');
+	const emptyMsg = {
+		search: 'No results matched your search.',
+		favorites: 'You have no favorites yet.',
+		default: 'Something went wrong with the API call :(',
+	};
+	emptyScreenMsg.textContent = emptyMsg[screen];
+	discoverContainer.append(emptyScreenMsg);
+};
+
+function populateMovies(movies, screen) {
+	console.log(this);
 	discoverContainer.innerHTML = '';
-	movies.forEach((movie) => {
-		// console.log(movie);
-		discoverContainer.innerHTML += `<div class="movie-box">
+	if (movies.length) {
+		movies.forEach((movie) => {
+			// console.log(movie);
+			discoverContainer.innerHTML += `<div class="movie-box">
     <div class="thumbnail-container">
     <img src="https://image.tmdb.org/t/p/w300/${movie.backdrop_path}" />
     </div>
@@ -41,13 +59,14 @@ function populateMovies(movies) {
     <input type="checkbox" data-id=${movie.id} class="favorite-checkmark">
     </div>
     </div>`;
-	});
-	setAlreadyFavorited(movies);
-	document
-		.querySelectorAll('.favorite-checkmark')
-		.forEach((favoriteCheckmark) => {
-			favoriteCheckmark.addEventListener('change', setFavorite);
 		});
+	} else {
+		handleEmptyScreen(screen);
+	}
+	setAlreadyFavorited(movies);
+	document.querySelectorAll('.favorite-checkmark').forEach((favoriteCheckmark) => {
+		favoriteCheckmark.addEventListener('change', setFavorite);
+	});
 }
 
 function searchMovie() {
@@ -57,9 +76,12 @@ function searchMovie() {
 			.then((response) => response.json())
 			.then((data) => {
 				console.log(data);
-				populateMovies(data.results);
+				populateMovies(data.results, 'search');
 			})
-			.catch((err) => console.log(`Error when searching: ${err}`));
+			.catch((err) => {
+				handleEmptyScreen();
+				console.log(`Error when searching: ${err}`);
+			});
 		btnClearSearch.classList.add('active');
 	} else {
 		initMovies();
@@ -116,9 +138,7 @@ function setAlreadyFavorited(movieList) {
 		favorites &&
 			favorites.forEach((favorite) => {
 				if (movieList.find((movie) => movie.id === favorite.id)) {
-					const currentFavorite = document.querySelector(
-						`.favorite-checkmark[data-id="${favorite.id}"]`
-					);
+					const currentFavorite = document.querySelector(`.favorite-checkmark[data-id="${favorite.id}"]`);
 					currentFavorite.checked = true;
 					currentFavorite.classList.add('favorited');
 				}
@@ -129,18 +149,18 @@ function setAlreadyFavorited(movieList) {
 }
 
 let debounceTimer;
-const debounce = (cb, time) => {
+const debounce = (searchFn) => {
 	window.clearTimeout(debounceTimer);
-	debounceTimer = window.setTimeout(cb, time);
+	debounceTimer = window.setTimeout(searchFn, 1000);
 };
-searchField.addEventListener('input', () => debounce(searchMovie, 1000));
+searchField.addEventListener('input', () => debounce(searchMovie));
 
 btnDiscover.addEventListener('click', () => {
 	initMovies();
 });
 btnFavorites.addEventListener('click', () => {
 	setActiveTab(btnFavorites);
-	populateMovies(favorites);
+	populateMovies(favorites, 'favorites');
 });
 
 searchField.addEventListener('focus', toggleSearchFocus);

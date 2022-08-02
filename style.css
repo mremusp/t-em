@@ -101,7 +101,7 @@ header {
 }
 
 .movie-box {
-  min-width: 160px;
+  /* min-width: 160px; */
   max-width: 320px;
   font-size: 0;
   z-index: 10;
@@ -185,6 +185,11 @@ header {
 .movie-box.fade-out {
   -webkit-animation: fadeOut 0.5s ease-in-out;
   animation: fadeOut 0.5s ease-in-out;
+}
+.empty-screen {
+  color: var(--lightgray);
+  padding: 20px;
+  font-size: 18px;
 }
 @keyframes greenFlair {
   0% {
