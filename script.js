@@ -1,7 +1,7 @@
 'use strict';
-const apiKey = typeof config != 'undefined' ? config.key : '<<key here>>';
-// add TMDB API key in this section ^^
-const auth = `api_key=${apiKey}`;
+const apiKey = '<<key here>>';
+// TMDB API key here ^^
+const auth = `api_key=${typeof config != 'undefined' ? config.key : apiKey}`;
 const baseURL = 'https://api.themoviedb.org/3/';
 
 console.clear();
@@ -16,6 +16,7 @@ const favorites = JSON.parse(sessionStorage.getItem('favoriteMovies')) ?? [];
 let currentTab;
 
 const initMovies = () => {
+	/* initializing the "landing" screen */
 	setActiveTab(btnDiscover);
 	btnClearSearch.classList.remove('active');
 	fetch(`${baseURL}discover/movie?${auth}`)
@@ -31,7 +32,7 @@ const initMovies = () => {
 initMovies();
 
 const handleEmptyScreen = (screen = 'default') => {
-	console.log('fn works');
+	/* displaying a message when no movies are shown */
 	const emptyScreenMsg = document.createElement('p');
 	emptyScreenMsg.classList.add('empty-screen');
 	const emptyMsg = {
@@ -44,14 +45,13 @@ const handleEmptyScreen = (screen = 'default') => {
 };
 
 function populateMovies(movies, screen) {
-	console.log(this);
+	/* displaying the passed in array as a grid */
 	discoverContainer.innerHTML = '';
 	if (movies.length) {
 		movies.forEach((movie) => {
-			// console.log(movie);
-			discoverContainer.innerHTML += `<div class="movie-box">
-    <div class="thumbnail-container">
-    <img src="https://image.tmdb.org/t/p/w300/${movie.backdrop_path}" />
+			discoverContainer.innerHTML += `<div class="movie-box ">
+    <div class="thumbnail-container ${!movie.backdrop_path ? 'default-img' : ''}">
+    <img src="https://image.tmdb.org/t/p/w300/${movie.backdrop_path}"/>
     </div>
     <div class="movie-info">
     <p class="movie-info--title">${movie.original_title}</p>
@@ -70,6 +70,7 @@ function populateMovies(movies, screen) {
 }
 
 function searchMovie() {
+	/* calling the "search" API endpoint with the value from the search field */
 	const searchStr = encodeURI(searchField.value);
 	if (searchStr) {
 		fetch(`${baseURL}search/movie?${auth}&query=${searchStr}`)
@@ -91,6 +92,7 @@ function searchMovie() {
 function setFavorite() {
 	const favoritedId = this.getAttribute('data-id');
 	const byeGrandpa = () => {
+		/* removing element from favorites screen when it is unfavorited */
 		this.parentElement.parentElement.classList.add('fade-out');
 		setTimeout(() => {
 			this.parentElement.parentElement.remove();
@@ -98,6 +100,7 @@ function setFavorite() {
 	};
 
 	const attemptSetFavorite = new Promise((resolve, reject) => {
+		/* adding movie details to the favorites array */
 		if (this.checked) {
 			fetch(`${baseURL}movie/${favoritedId}?${auth}`)
 				.then((response) => response.json())
@@ -122,18 +125,19 @@ function setFavorite() {
 		}
 	});
 
-	attemptSetFavorite
+	attemptSetFavorite /* saving the favorites array to localStorage */
 		.then((message) => {
 			console.log(favoritedId, message);
 			this.classList.toggle('favorited');
-			sessionStorage.setItem('favoriteMovies', JSON.stringify(favorites));
+			localStorage.setItem('favoriteMovies', JSON.stringify(favorites));
 		})
 		.catch((message) => {
-			console.log(message);
+			console.log(`Error when saving to localStorage: ${message}`);
 		});
 }
 
 function setAlreadyFavorited(movieList) {
+	/* adding the 💚 to the movies from the favorites array */
 	try {
 		favorites &&
 			favorites.forEach((favorite) => {
@@ -150,6 +154,7 @@ function setAlreadyFavorited(movieList) {
 
 let debounceTimer;
 const debounce = (searchFn) => {
+	/* calling the "search" endpoint after the user has stopped typing for 1 second */
 	window.clearTimeout(debounceTimer);
 	debounceTimer = window.setTimeout(searchFn, 1000);
 };
